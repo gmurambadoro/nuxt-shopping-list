@@ -3,7 +3,7 @@ useHead({
   title: 'My Shopping Lists — ShopList'
 })
 
-const { lists, toggleItem, removeItem, addItem } = useShoppingLists()
+const { lists, toggleItem, removeItem, addItem, clearPurchased } = useShoppingLists()
 </script>
 
 <template>
@@ -21,6 +21,7 @@ const { lists, toggleItem, removeItem, addItem } = useShoppingLists()
         @toggle-item="toggleItem(list.id, $event)"
         @remove-item="removeItem(list.id, $event)"
         @add-item="addItem(list.id, $event)"
+        @clear-purchased="clearPurchased(list.id)"
       />
     </div>
   </div>

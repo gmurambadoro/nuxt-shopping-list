@@ -1,17 +1,33 @@
 <script setup lang="ts">
 import type { ShoppingList } from '~/shared/types'
 
-defineProps<{
+const props = defineProps<{
   list: ShoppingList
 }>()
 
 const emit = defineEmits<{
-  toggleItem: [itemId: string]
-  removeItem: [itemId: string]
-  addItem:    [name: string]
+  toggleItem:     [itemId: string]
+  removeItem:     [itemId: string]
+  addItem:        [name: string]
+  clearPurchased: []
 }>()
 
 const newItemName = ref('')
+
+// computed() derives a value from reactive state and caches the result.
+// These only recalculate when props.list.items changes — unlike inline
+// .filter() calls in the template, which re-run on every render.
+const purchasedItems = computed(() => props.list.items.filter(item => item.purchased))
+const remainingItems = computed(() => props.list.items.filter(item => !item.purchased))
+
+// progressPct depends on purchasedItems, so it is also only recalculated
+// when the underlying items change. The ternary guards against division by zero
+// when the list is empty.
+const progressPct = computed(() =>
+  props.list.items.length
+    ? Math.round((purchasedItems.value.length / props.list.items.length) * 100)
+    : 0
+)
 
 function submitNewItem() {
   const name = newItemName.value.trim()
@@ -29,25 +45,50 @@ function submitNewItem() {
         <h2 class="font-semibold text-gray-900">{{ list.name }}</h2>
         <p class="text-xs text-gray-400 mt-0.5">Created {{ list.createdAt }}</p>
       </div>
+      <!-- purchasedItems.length reads the cached computed value, not a new filter call -->
       <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-        {{ list.items.filter(item => item.purchased).length }}/{{ list.items.length }} done
+        {{ purchasedItems.length }}/{{ list.items.length }} done
       </span>
     </div>
 
-    <!-- Progress bar -->
+    <!-- Progress bar: width is driven by the progressPct computed value -->
     <div class="h-1 bg-gray-100">
       <div
         class="h-1 bg-green-500 transition-all duration-300"
-        :style="{ width: (list.items.length
-          ? Math.round((list.items.filter(item => item.purchased).length / list.items.length) * 100)
-          : 0) + '%' }"
+        :style="{ width: progressPct + '%' }"
       />
     </div>
 
-    <!-- Items -->
     <ul class="divide-y divide-gray-100">
+      <!-- Remaining items rendered first so unchecked items always appear at the top -->
       <ShoppingItem
-        v-for="item in list.items"
+        v-for="item in remainingItems"
+        :key="item.id"
+        :item="item"
+        @toggle="emit('toggleItem', item.id)"
+        @remove="emit('removeItem', item.id)"
+      />
+
+      <!--
+        v-if completely removes this element from the DOM when false.
+        The divider is only meaningful when both groups have items — without
+        this guard it would float with nothing below it on a fully checked list.
+        Compare with v-show, which keeps the element in the DOM but hides it
+        with display:none. Prefer v-if when the element is conditionally
+        meaningless; prefer v-show for frequent visibility toggling.
+      -->
+      <li
+        v-if="remainingItems.length && purchasedItems.length"
+        class="px-5 py-2 flex items-center gap-3"
+      >
+        <div class="flex-1 h-px bg-gray-100" />
+        <span class="text-xs text-gray-400">Purchased</span>
+        <div class="flex-1 h-px bg-gray-100" />
+      </li>
+
+      <!-- Purchased items rendered below the divider -->
+      <ShoppingItem
+        v-for="item in purchasedItems"
         :key="item.id"
         :item="item"
         @toggle="emit('toggleItem', item.id)"
@@ -55,8 +96,20 @@ function submitNewItem() {
       />
     </ul>
 
-    <!-- Add item form -->
-    <div class="px-5 py-3 border-t border-gray-100">
+    <!--
+      Empty state: always handle the case where the list has no items.
+      A descriptive message is far better UX than a blank gap.
+    -->
+    <p
+      v-if="!list.items.length"
+      class="px-5 py-6 text-sm text-gray-400 text-center"
+    >
+      No items yet. Add one below.
+    </p>
+
+    <div class="px-5 py-3 border-t border-gray-100 space-y-2">
+      <!-- @submit.prevent calls event.preventDefault() via a Vue event modifier,
+           avoiding a full page reload without writing it in the handler itself -->
       <form class="flex gap-2" @submit.prevent="submitNewItem">
         <input
           v-model="newItemName"
@@ -72,6 +125,20 @@ function submitNewItem() {
           Add
         </button>
       </form>
+
+      <!--
+        v-if hides this button entirely when there is nothing to clear,
+        rather than leaving a disabled button permanently in view.
+      -->
+      <div class="flex justify-end">
+        <button
+          v-if="purchasedItems.length"
+          class="text-xs text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+          @click="emit('clearPurchased')"
+        >
+          Clear {{ purchasedItems.length }} purchased
+        </button>
+      </div>
     </div>
   </div>
 </template>

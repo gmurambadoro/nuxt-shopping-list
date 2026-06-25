@@ -37,9 +37,12 @@ function loadFromStorage(): ShoppingList[] {
 
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
+    // Fall back to seed data when storage is empty
     return stored ? (JSON.parse(stored) as ShoppingList[]) : seedLists
   }
   catch {
+    // JSON.parse can throw if stored data is corrupted or from an old schema.
+    // Returning seedLists keeps the app functional rather than crashing.
     return seedLists
   }
 }
@@ -52,23 +55,32 @@ function saveToStorage(lists: ShoppingList[]): void {
 export function useShoppingLists() {
   const lists = ref<ShoppingList[]>(loadFromStorage())
 
-  // Persist to localStorage whenever lists change (deep watches nested objects)
+  // watch() runs the callback whenever lists changes.
+  // { deep: true } is required to detect mutations to nested properties
+  // (e.g. item.purchased = true) — without it, only reference replacements
+  // (e.g. lists.value = [...]) would trigger the callback.
   watch(lists, (updatedLists) => saveToStorage(updatedLists), { deep: true })
 
   function toggleItem(listId: string, itemId: string) {
     const list = lists.value.find(list => list.id === listId)
     const item = list?.items.find(item => item.id === itemId)
+    // Mutating a nested property of a ref triggers Vue's reactivity system
+    // and the deep watcher above, which persists the change to localStorage.
     if (item) item.purchased = !item.purchased
   }
 
   function removeItem(listId: string, itemId: string) {
     const list = lists.value.find(list => list.id === listId)
+    // Replacing the array reference triggers reactivity.
+    // Array.filter returns a new array, so Vue detects the change.
     if (list) list.items = list.items.filter(item => item.id !== itemId)
   }
 
   function addItem(listId: string, name: string) {
     const list = lists.value.find(list => list.id === listId)
     if (list) {
+      // Array.push mutates in place. Vue's reactive proxy intercepts this
+      // and triggers updates, so there is no need to replace the array.
       list.items.push({
         id: Date.now().toString(),
         listId,
@@ -91,6 +103,14 @@ export function useShoppingLists() {
     lists.value = lists.value.filter(list => list.id !== listId)
   }
 
+  // Removes all purchased items from a list in one action.
+  // Because all mutations go through this composable, the deep watcher
+  // automatically persists this change to localStorage — no extra wiring needed.
+  function clearPurchased(listId: string) {
+    const list = lists.value.find(list => list.id === listId)
+    if (list) list.items = list.items.filter(item => !item.purchased)
+  }
+
   return {
     lists,
     toggleItem,
@@ -98,5 +118,6 @@ export function useShoppingLists() {
     addItem,
     addList,
     removeList,
+    clearPurchased,
   }
 }
