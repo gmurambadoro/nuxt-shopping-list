@@ -5,6 +5,7 @@ export interface ShoppingList {
   id: string
   name: string
   createdAt: string
+  items: ShoppingItem[]
 }
 
 export interface ShoppingItem {
