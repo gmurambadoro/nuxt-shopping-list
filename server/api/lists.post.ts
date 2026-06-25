@@ -3,6 +3,8 @@ import { lists } from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
+  const { user } = await requireUserSession(event)
+
   const body = await readBody<{ name: string }>(event)
   if (!body.name?.trim()) {
     throw createError({ statusCode: 400, statusMessage: 'Name is required' })
@@ -14,6 +16,7 @@ export default defineEventHandler(async (event) => {
 
   await db.insert(lists).values({
     id,
+    userId: user.id,
     name: body.name.trim(),
     createdAt: now,
     updatedAt: now,

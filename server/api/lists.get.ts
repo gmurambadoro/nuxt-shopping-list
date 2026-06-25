@@ -1,14 +1,17 @@
 import { useDb } from '../db'
 import { lists, items } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  const { user } = await requireUserSession(event)
+
   const db = useDb()
 
-  // Fetch all lists ordered by creation date (newest first)
-  const listRows = await db.select().from(lists).orderBy(lists.createdAt)
+  const listRows = await db.select()
+    .from(lists)
+    .where(eq(lists.userId, user.id))
+    .orderBy(lists.createdAt)
 
-  // Fetch all items and group them by listId
   const itemRows = await db.select().from(items)
   const itemsByListId: Record<string, typeof itemRows> = {}
   for (const item of itemRows) {
@@ -16,7 +19,6 @@ export default defineEventHandler(async () => {
     itemsByListId[item.listId].push(item)
   }
 
-  // Merge items into their parent lists
   return listRows.map(list => ({
     ...list,
     items: itemsByListId[list.id] ?? [],
