@@ -10,6 +10,7 @@ const emit = defineEmits<{
   removeItem:     [itemId: string]
   addItem:        [name: string]
   clearPurchased: []
+  removeList:     []
 }>()
 
 const newItemName = ref('')
@@ -45,10 +46,24 @@ function submitNewItem() {
         <h2 class="font-semibold text-gray-900">{{ list.name }}</h2>
         <p class="text-xs text-gray-400 mt-0.5">Created {{ list.createdAt }}</p>
       </div>
-      <!-- purchasedItems.length reads the cached computed value, not a new filter call -->
-      <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-        {{ purchasedItems.length }}/{{ list.items.length }} done
-      </span>
+
+      <div class="flex items-center gap-3">
+        <!-- purchasedItems.length reads the cached computed value, not a new filter call -->
+        <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+          {{ purchasedItems.length }}/{{ list.items.length }} done
+        </span>
+
+        <!-- Delete list button — emits removeList to the parent to handle -->
+        <button
+          class="text-gray-300 hover:text-red-400 transition-colors cursor-pointer"
+          title="Delete list"
+          @click="emit('removeList')"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Progress bar: width is driven by the progressPct computed value -->
