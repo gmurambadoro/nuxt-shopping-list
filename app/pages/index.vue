@@ -5,7 +5,7 @@ useHead({
   title: 'My Shopping Lists — ShopList'
 })
 
-const lists: ShoppingList[] = [
+const lists = ref<ShoppingList[]>([
   {
     id: '1',
     name: 'Weekly Groceries',
@@ -30,7 +30,30 @@ const lists: ShoppingList[] = [
       { id: '10', listId: '2', name: 'Charcoal',              purchased: false },
     ],
   },
-]
+])
+
+function toggleItem(listId: string, itemId: string) {
+  const list = lists.value.find(list => list.id === listId)
+  const item = list?.items.find(item => item.id === itemId)
+  if (item) item.purchased = !item.purchased
+}
+
+function removeItem(listId: string, itemId: string) {
+  const list = lists.value.find(list => list.id === listId)
+  if (list) list.items = list.items.filter(item => item.id !== itemId)
+}
+
+function addItem(listId: string, name: string) {
+  const list = lists.value.find(list => list.id === listId)
+  if (list) {
+    list.items.push({
+      id: Date.now().toString(),
+      listId,
+      name,
+      purchased: false,
+    })
+  }
+}
 </script>
 
 <template>
@@ -45,6 +68,9 @@ const lists: ShoppingList[] = [
         v-for="list in lists"
         :key="list.id"
         :list="list"
+        @toggle-item="toggleItem(list.id, $event)"
+        @remove-item="removeItem(list.id, $event)"
+        @add-item="addItem(list.id, $event)"
       />
     </div>
   </div>
