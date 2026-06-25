@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Register — ShopList' })
 
-const { register } = useUserSession()
+const { fetch } = useUserSession()
 const router = useRouter()
 
 const name = ref('')
@@ -14,7 +14,15 @@ async function handleSubmit() {
   error.value = ''
   submitting.value = true
   try {
-    await register({ name: name.value.trim(), email: email.value.trim(), password: password.value })
+    await $fetch('/api/auth/register', {
+      method: 'POST',
+      body: {
+        name: name.value.trim(),
+        email: email.value.trim(),
+        password: password.value,
+      },
+    })
+    await fetch()
     router.push('/')
   } catch (e: any) {
     error.value = e.data?.statusMessage ?? 'Registration failed'

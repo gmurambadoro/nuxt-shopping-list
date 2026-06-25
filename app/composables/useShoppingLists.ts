@@ -4,12 +4,22 @@ export function useShoppingLists() {
   // useAsyncData fetches data on the server during SSR and on the client during
   // navigation. The key 'shopping-lists' deduplicates concurrent calls within the
   // same request — calling useShoppingLists() twice won't send two HTTP requests.
+  //
+  // server: false — During SSR, internal $fetch calls don't forward the session
+  // cookie, so the /api/lists handler's requireUserSession() would return 401.
+  // By disabling server-side fetching, the data is always fetched on the client
+  // where the browser's native fetch includes the cookie correctly.
+  // pending starts as true on the client, avoiding a flash of empty content.
   const { data, refresh, pending } = useAsyncData<ShoppingList[]>('shopping-lists', () =>
-    $fetch('/api/lists')
+    $fetch('/api/lists'),
+    { server: false }
   )
 
   // Provide a non-null array for the template even while data is loading
   const lists = computed<ShoppingList[]>(() => data.value ?? [])
+
+  // loading is active while the client fetch is in flight or hasn't started yet
+  const loading = computed(() => pending.value || data.value === null)
 
   // ── Mutations ────────────────────────────────────────────────────────
   // Every mutation calls the API with $fetch (for writes), then patches the
@@ -74,6 +84,7 @@ export function useShoppingLists() {
 
   return {
     lists,
+    loading,
     pending,
     refresh,
     toggleItem,

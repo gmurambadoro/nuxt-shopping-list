@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Sign in — ShopList' })
 
-const { login } = useUserSession()
+const { fetch } = useUserSession()
 const router = useRouter()
 
 const email = ref('')
@@ -13,7 +13,11 @@ async function handleSubmit() {
   error.value = ''
   submitting.value = true
   try {
-    await login({ email: email.value.trim(), password: password.value })
+    await $fetch('/api/auth/login', {
+      method: 'POST',
+      body: { email: email.value.trim(), password: password.value },
+    })
+    await fetch()
     router.push('/')
   } catch (e: any) {
     error.value = e.data?.statusMessage ?? 'Sign in failed'

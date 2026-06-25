@@ -4,7 +4,7 @@ useHead({
   title: 'My Shopping Lists — ShopList'
 })
 
-const { lists, pending, toggleItem, removeItem, addItem, addList, removeList, clearPurchased } = useShoppingLists()
+const { lists, loading, pending, toggleItem, removeItem, addItem, addList, removeList, clearPurchased } = useShoppingLists()
 
 const showAddForm = ref(false)
 
@@ -40,9 +40,9 @@ function handleAddList(name: string) {
       @cancel="showAddForm = false"
     />
 
-    <!-- Loading state -->
+    <!-- Loading state — active until the client fetch completes -->
     <div
-      v-if="pending"
+      v-if="loading"
       class="text-center py-20 text-gray-400"
     >
       <p class="text-sm">Loading lists…</p>
