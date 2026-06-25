@@ -1,118 +1,81 @@
-import type { ShoppingList } from '~/shared/types'
-
-const STORAGE_KEY = 'shopping-lists'
-
-// Seed data shown on first load before the user creates their own lists
-const seedLists: ShoppingList[] = [
-  {
-    id: '1',
-    name: 'Weekly Groceries',
-    createdAt: '2026-06-20',
-    items: [
-      { id: '1', listId: '1', name: 'Whole milk (2L)',      purchased: true  },
-      { id: '2', listId: '1', name: 'Sourdough bread',      purchased: true  },
-      { id: '3', listId: '1', name: 'Free-range eggs (12)', purchased: false },
-      { id: '4', listId: '1', name: 'Cheddar cheese',       purchased: false },
-      { id: '5', listId: '1', name: 'Unsalted butter',      purchased: false },
-    ],
-  },
-  {
-    id: '2',
-    name: 'BBQ Weekend',
-    createdAt: '2026-06-22',
-    items: [
-      { id: '6',  listId: '2', name: 'Beef burgers (6 pack)', purchased: false },
-      { id: '7',  listId: '2', name: 'Burger buns',           purchased: false },
-      { id: '8',  listId: '2', name: 'Coleslaw',              purchased: false },
-      { id: '9',  listId: '2', name: 'BBQ sauce',             purchased: true  },
-      { id: '10', listId: '2', name: 'Charcoal',              purchased: false },
-    ],
-  },
-]
-
-function loadFromStorage(): ShoppingList[] {
-  // localStorage is only available in the browser, not on the server.
-  // import.meta.client is Nuxt's SSR-safe guard for browser-only code.
-  if (!import.meta.client) return seedLists
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    // Fall back to seed data when storage is empty
-    return stored ? (JSON.parse(stored) as ShoppingList[]) : seedLists
-  }
-  catch {
-    // JSON.parse can throw if stored data is corrupted or from an old schema.
-    // Returning seedLists keeps the app functional rather than crashing.
-    return seedLists
-  }
-}
-
-function saveToStorage(lists: ShoppingList[]): void {
-  if (!import.meta.client) return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(lists))
-}
+import type { ShoppingList, ShoppingItem } from '~/shared/types'
 
 export function useShoppingLists() {
-  const lists = ref<ShoppingList[]>(loadFromStorage())
+  // useAsyncData fetches data on the server during SSR and on the client during
+  // navigation. The key 'shopping-lists' deduplicates concurrent calls within the
+  // same request — calling useShoppingLists() twice won't send two HTTP requests.
+  const { data, refresh, pending } = useAsyncData<ShoppingList[]>('shopping-lists', () =>
+    $fetch('/api/lists')
+  )
 
-  // watch() runs the callback whenever lists changes.
-  // { deep: true } is required to detect mutations to nested properties
-  // (e.g. item.purchased = true) — without it, only reference replacements
-  // (e.g. lists.value = [...]) would trigger the callback.
-  watch(lists, (updatedLists) => saveToStorage(updatedLists), { deep: true })
+  // Provide a non-null array for the template even while data is loading
+  const lists = computed<ShoppingList[]>(() => data.value ?? [])
 
-  function toggleItem(listId: string, itemId: string) {
-    const list = lists.value.find(list => list.id === listId)
-    const item = list?.items.find(item => item.id === itemId)
-    // Mutating a nested property of a ref triggers Vue's reactivity system
-    // and the deep watcher above, which persists the change to localStorage.
-    if (item) item.purchased = !item.purchased
-  }
+  // ── Mutations ────────────────────────────────────────────────────────
+  // Every mutation calls the API with $fetch (for writes), then patches the
+  // local data so the UI responds immediately without a full re-fetch.
 
-  function removeItem(listId: string, itemId: string) {
-    const list = lists.value.find(list => list.id === listId)
-    // Replacing the array reference triggers reactivity.
-    // Array.filter returns a new array, so Vue detects the change.
-    if (list) list.items = list.items.filter(item => item.id !== itemId)
-  }
-
-  function addItem(listId: string, name: string) {
-    const list = lists.value.find(list => list.id === listId)
-    if (list) {
-      // Array.push mutates in place. Vue's reactive proxy intercepts this
-      // and triggers updates, so there is no need to replace the array.
-      list.items.push({
-        id: Date.now().toString(),
-        listId,
-        name,
-        purchased: false,
-      })
+  async function toggleItem(listId: string, itemId: string) {
+    const updated = await $fetch<Pick<ShoppingItem, 'purchased'>>(
+      `/api/lists/${listId}/items/${itemId}`,
+      { method: 'PATCH' }
+    )
+    if (data.value) {
+      const item = data.value
+        .flatMap(l => l.items)
+        .find(i => i.id === itemId)
+      if (item) item.purchased = updated.purchased
     }
   }
 
-  function addList(name: string) {
-    lists.value.push({
-      id: Date.now().toString(),
-      name,
-      createdAt: new Date().toISOString().slice(0, 10),
-      items: [],
+  async function removeItem(listId: string, itemId: string) {
+    await $fetch(`/api/lists/${listId}/items/${itemId}`, { method: 'DELETE' })
+    if (data.value) {
+      const list = data.value.find(l => l.id === listId)
+      if (list) list.items = list.items.filter(i => i.id !== itemId)
+    }
+  }
+
+  async function addItem(listId: string, name: string) {
+    const created = await $fetch<ShoppingItem>(`/api/lists/${listId}/items`, {
+      method: 'POST',
+      body: { name },
     })
+    if (data.value) {
+      const list = data.value.find(l => l.id === listId)
+      if (list) list.items.push(created)
+    }
   }
 
-  function removeList(listId: string) {
-    lists.value = lists.value.filter(list => list.id !== listId)
+  async function addList(name: string) {
+    const created = await $fetch<ShoppingList>('/api/lists', {
+      method: 'POST',
+      body: { name },
+    })
+    if (data.value) data.value.push(created)
   }
 
-  // Removes all purchased items from a list in one action.
-  // Because all mutations go through this composable, the deep watcher
-  // automatically persists this change to localStorage — no extra wiring needed.
-  function clearPurchased(listId: string) {
-    const list = lists.value.find(list => list.id === listId)
-    if (list) list.items = list.items.filter(item => !item.purchased)
+  async function removeList(listId: string) {
+    await $fetch(`/api/lists/${listId}`, { method: 'DELETE' })
+    if (data.value) data.value = data.value.filter(l => l.id !== listId)
+  }
+
+  async function clearPurchased(listId: string) {
+    if (!data.value) return
+    const list = data.value.find(l => l.id === listId)
+    if (!list) return
+
+    const purchased = list.items.filter(i => i.purchased)
+    await Promise.all(purchased.map(item =>
+      $fetch(`/api/lists/${listId}/items/${item.id}`, { method: 'DELETE' })
+    ))
+    list.items = list.items.filter(i => !i.purchased)
   }
 
   return {
     lists,
+    pending,
+    refresh,
     toggleItem,
     removeItem,
     addItem,

@@ -44,7 +44,7 @@ function submitNewItem() {
     <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
       <div>
         <h2 class="font-semibold text-gray-900">{{ list.name }}</h2>
-        <p class="text-xs text-gray-400 mt-0.5">Created {{ list.createdAt }}</p>
+        <p class="text-xs text-gray-400 mt-0.5">Created {{ list.createdAt.slice(0, 10) }}</p>
       </div>
 
       <div class="flex items-center gap-3">

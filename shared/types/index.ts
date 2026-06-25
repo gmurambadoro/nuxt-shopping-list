@@ -1,10 +1,8 @@
-// Shared types used by both app/ and server/
-// We will expand this as the project grows.
-
 export interface ShoppingList {
   id: string
   name: string
   createdAt: string
+  updatedAt: string
   items: ShoppingItem[]
 }
 
@@ -13,4 +11,5 @@ export interface ShoppingItem {
   listId: string
   name: string
   purchased: boolean
+  createdAt: string
 }

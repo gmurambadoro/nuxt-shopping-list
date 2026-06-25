@@ -3,10 +3,8 @@ useHead({
   title: 'My Shopping Lists — ShopList'
 })
 
-const { lists, toggleItem, removeItem, addItem, addList, removeList, clearPurchased } = useShoppingLists()
+const { lists, pending, toggleItem, removeItem, addItem, addList, removeList, clearPurchased } = useShoppingLists()
 
-// showAddForm is purely UI state — only this page needs to know whether
-// the form is visible, so it stays local rather than going in the composable.
 const showAddForm = ref(false)
 
 function handleAddList(name: string) {
@@ -17,11 +15,12 @@ function handleAddList(name: string) {
 
 <template>
   <div>
-    <!-- Page header -->
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">My Shopping Lists</h1>
-        <p class="text-gray-500 mt-1">{{ lists.length }} {{ lists.length === 1 ? 'list' : 'lists' }}</p>
+        <p v-if="!pending" class="text-gray-500 mt-1">
+          {{ lists.length }} {{ lists.length === 1 ? 'list' : 'lists' }}
+        </p>
       </div>
 
       <button
@@ -33,14 +32,6 @@ function handleAddList(name: string) {
       </button>
     </div>
 
-    <!--
-      AddListForm owns the input, validation, and emits two events:
-        - 'submit' (with the list name) — handled by handleAddList, which calls
-          addList() then closes the form. A named function is used because there
-          are two statements; an inline expression would be too cramped.
-        - 'cancel' — handled inline as a single expression. Setting showAddForm
-          to false is all that's needed, so no named function is required.
-    -->
     <AddListForm
       v-if="showAddForm"
       class="mb-6"
@@ -48,8 +39,16 @@ function handleAddList(name: string) {
       @cancel="showAddForm = false"
     />
 
+    <!-- Loading state -->
+    <div
+      v-if="pending"
+      class="text-center py-20 text-gray-400"
+    >
+      <p class="text-sm">Loading lists…</p>
+    </div>
+
     <!-- List cards -->
-    <div class="space-y-6">
+    <div v-else class="space-y-6">
       <ShoppingList
         v-for="list in lists"
         :key="list.id"
@@ -62,9 +61,9 @@ function handleAddList(name: string) {
       />
     </div>
 
-    <!-- Empty state when no lists exist -->
+    <!-- Empty state -->
     <div
-      v-if="!lists.length"
+      v-if="!pending && !lists.length"
       class="text-center py-20"
     >
       <p class="text-lg font-medium text-gray-500 mb-1">No lists yet</p>
