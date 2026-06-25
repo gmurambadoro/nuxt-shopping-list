@@ -1,3 +1,14 @@
+// POST /api/lists/:listId/items
+// Adds a new item to a specific list.
+// Only the list owner can add items.
+//
+// Body: { name: string }
+// Response: Item
+// Auth: required — throws 401 if no valid session
+// Errors:
+//   400 — item name is required
+//   404 — list not found or does not belong to the user
+
 import { useDb } from '../../../db'
 import { items, lists } from '../../../db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -14,6 +25,7 @@ export default defineEventHandler(async (event) => {
 
   const db = useDb()
 
+  // Verify the list exists and belongs to the user
   const [list] = await db.select()
     .from(lists)
     .where(and(eq(lists.id, listId!), eq(lists.userId, user.id)))

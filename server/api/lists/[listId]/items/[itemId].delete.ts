@@ -1,3 +1,11 @@
+// DELETE /api/lists/:listId/items/:itemId
+// Removes an item from a list. Only the list owner can delete items.
+//
+// Response: { success: true }
+// Auth: required — throws 401 if no valid session
+// Errors:
+//   404 — list not found, or item not found, or item does not belong to the list
+
 import { useDb } from '../../../../db'
 import { items, lists } from '../../../../db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -9,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const itemId = getRouterParam(event, 'itemId')
   const db = useDb()
 
-  // Verify the list belongs to the user
+  // Verify list ownership before operating on items
   const [list] = await db.select()
     .from(lists)
     .where(and(eq(lists.id, listId!), eq(lists.userId, user.id)))
@@ -17,6 +25,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'List not found' })
   }
 
+  // Verify the item exists and belongs to the expected list
   const [item] = await db.select()
     .from(items)
     .where(eq(items.id, itemId!))

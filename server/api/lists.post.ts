@@ -1,3 +1,10 @@
+// POST /api/lists
+// Creates a new shopping list for the authenticated user.
+//
+// Body: { name: string }
+// Response: { id, userId, name, createdAt, updatedAt, items: [] }
+// Auth: required — throws 401 if no valid session
+
 import { useDb } from '../db'
 import { lists } from '../db/schema'
 import { eq } from 'drizzle-orm'
@@ -22,6 +29,7 @@ export default defineEventHandler(async (event) => {
     updatedAt: now,
   })
 
+  // Re-fetch the created list to return the exact DB row
   const [list] = await db.select().from(lists).where(eq(lists.id, id))
   return { ...list, items: [] }
 })
