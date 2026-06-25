@@ -14,6 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const newItemName = ref('')
+const shareModal = ref<InstanceType<typeof ShareModal>>()
 
 // computed() derives a value from reactive state and caches the result.
 // These only recalculate when props.list.items changes — unlike inline
@@ -52,6 +53,15 @@ function submitNewItem() {
         <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
           {{ purchasedItems.length }}/{{ list.items.length }} done
         </span>
+
+        <!-- Share button — opens the ShareModal -->
+        <button
+          class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer text-xs"
+          title="Share list"
+          @click="shareModal?.open()"
+        >
+          Share
+        </button>
 
         <!-- Delete list button — emits removeList to the parent to handle -->
         <button
@@ -156,4 +166,7 @@ function submitNewItem() {
       </div>
     </div>
   </div>
+
+  <!-- Share modal — teleported to document body -->
+  <ShareModal ref="shareModal" :list-id="list.id" />
 </template>

@@ -21,3 +21,13 @@ export interface ShoppingItem {
   purchased: boolean
   createdAt: string
 }
+
+export interface ShareToken {
+  id: string
+  listId: string
+  token: string
+  role: 'viewer' | 'editor'
+  email: string | null
+  createdBy: string
+  createdAt: string
+}

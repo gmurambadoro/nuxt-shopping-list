@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
 useHead({
   title: 'My Shopping Lists — ShopList'
 })

@@ -15,6 +15,13 @@
       "when": 1782414039608,
       "tag": "0001_superb_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1782414736838,
+      "tag": "0002_mysterious_wildside",
+      "breakpoints": true
     }
   ]
 }
