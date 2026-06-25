@@ -1,5 +1,13 @@
+export interface User {
+  id: string
+  email: string
+  name: string
+  createdAt: string
+}
+
 export interface ShoppingList {
   id: string
+  userId: string
   name: string
   createdAt: string
   updatedAt: string
