@@ -14,9 +14,10 @@
 // invitations). When present it allows associating a share link with a
 // specific recipient, but the link is still usable by anyone who has it.
 
-import { useDb } from '../../../db'
-import { shareTokens, lists } from '../../../db/schema'
+import { useDb } from '#server/db'
+import { shareTokens, lists } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { sendShareInviteEmail } from '#server/utils/email'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -50,5 +51,18 @@ export default defineEventHandler(async (event) => {
   // Re-select the created row so we return the full object (including any
   // defaults the DB applied) rather than reconstructing it from memory.
   const [created] = await db.select().from(shareTokens).where(eq(shareTokens.id, id))
+
+  // Fire-and-forget share invite email when an email address is provided.
+  if (body.email) {
+    const origin = getRequestProtocol(event) + '://' + getRequestHost(event)
+    const shareUrl = `${origin}/share/${token}`
+    sendShareInviteEmail({
+      email: body.email,
+      inviterName: user.name,
+      listName: list.name,
+      shareUrl,
+    })
+  }
+
   return created
 })

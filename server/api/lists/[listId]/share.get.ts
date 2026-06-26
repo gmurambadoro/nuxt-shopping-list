@@ -14,8 +14,8 @@
 // are practically unguessable when random. They serve as bearer tokens —
 // possession of the URL is sufficient to access the list.
 
-import { useDb } from '../../../db'
-import { shareTokens, lists } from '../../../db/schema'
+import { useDb } from '#server/db'
+import { shareTokens, lists } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

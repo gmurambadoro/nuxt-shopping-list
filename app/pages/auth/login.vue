@@ -1,21 +1,42 @@
 <script setup lang="ts">
-useHead({ title: 'Sign in — ShopList' })
+import { loginSchema } from '#shared/validation'
+import type { LoginInput } from '#shared/validation'
+
+useSeoMeta({
+  title: 'Sign in — ShopList',
+  description: 'Sign in to your ShopList account to manage shared shopping lists.',
+})
 
 const { fetch } = useUserSession()
 const router = useRouter()
 
-const email = ref('')
-const password = ref('')
+const form = reactive<LoginInput>({ email: '', password: '' })
+const fieldErrors = reactive<Partial<Record<keyof LoginInput, string>>>({})
 const error = ref('')
 const submitting = ref(false)
 
+function validate(): boolean {
+  const result = loginSchema.safeParse(form)
+  if (result.success) {
+    for (const key of Object.keys(fieldErrors)) fieldErrors[key as keyof LoginInput] = ''
+    return true
+  }
+  const issues = result.error?.issues ?? []
+  for (const key of ['email', 'password'] as const) {
+    const issue = issues.find(i => i.path[0] === key)
+    fieldErrors[key] = issue ? issue.message : ''
+  }
+  return false
+}
+
 async function handleSubmit() {
+  if (!validate()) return
   error.value = ''
   submitting.value = true
   try {
     await $fetch('/api/auth/login', {
       method: 'POST',
-      body: { email: email.value.trim(), password: password.value },
+      body: { email: form.email, password: form.password },
     })
     await fetch()
     router.push('/')
@@ -35,26 +56,28 @@ async function handleSubmit() {
       <div>
         <label class="text-sm font-medium text-gray-700 block mb-1">Email</label>
         <input
-          v-model="email"
+          v-model="form.email"
           type="email"
-          required
           autocomplete="email"
-          class="w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-500 transition-colors"
+          class="w-full text-sm bg-white border rounded-lg px-3 py-2 outline-none transition-colors"
+          :class="fieldErrors.email ? 'border-red-400 focus:border-red-500' : 'border-gray-300 focus:border-gray-500'"
         />
+        <p v-if="fieldErrors.email" class="text-xs text-red-500 mt-1">{{ fieldErrors.email }}</p>
       </div>
 
       <div>
         <label class="text-sm font-medium text-gray-700 block mb-1">Password</label>
         <input
-          v-model="password"
+          v-model="form.password"
           type="password"
-          required
           autocomplete="current-password"
-          class="w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-500 transition-colors"
+          class="w-full text-sm bg-white border rounded-lg px-3 py-2 outline-none transition-colors"
+          :class="fieldErrors.password ? 'border-red-400 focus:border-red-500' : 'border-gray-300 focus:border-gray-500'"
         />
+        <p v-if="fieldErrors.password" class="text-xs text-red-500 mt-1">{{ fieldErrors.password }}</p>
       </div>
 
-      <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
+      <p v-if="error" class="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ error }}</p>
 
       <button
         type="submit"

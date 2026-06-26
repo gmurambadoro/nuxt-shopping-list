@@ -17,10 +17,11 @@
 // Role is included in the API response so the UI can communicate whether
 // the shared user can edit or just view.
 
-import type { ShoppingList } from '~/shared/types'
+import type { ShoppingList } from '#shared/types'
 
-useHead({
-  title: 'Shared List — ShopList'
+useSeoMeta({
+  title: 'Shared List — ShopList',
+  description: 'View a shared shopping list.',
 })
 
 const route = useRoute()

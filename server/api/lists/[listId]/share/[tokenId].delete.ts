@@ -12,8 +12,8 @@
 // (bearer secret). This is intentional: the token value should never appear
 // in a URL path where it could be logged by proxies or analytics.
 
-import { useDb } from '../../../../db'
-import { shareTokens, lists } from '../../../../db/schema'
+import { useDb } from '#server/db'
+import { shareTokens, lists } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

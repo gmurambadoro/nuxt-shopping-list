@@ -5,8 +5,8 @@
 // Response: Array<{ id, userId, name, createdAt, updatedAt, items: Item[] }>
 // Auth: required — throws 401 if no valid session
 
-import { useDb } from '../db'
-import { lists, items } from '../db/schema'
+import { useDb } from '#server/db'
+import { lists, items } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

@@ -9,8 +9,8 @@
 //   401 — invalid credentials (same message for both wrong email and wrong
 //         password to prevent email enumeration attacks)
 
-import { useDb } from '../../db'
-import { users } from '../../db/schema'
+import { useDb } from '#server/db'
+import { users } from '#server/db/schema'
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

@@ -11,7 +11,7 @@
 // The ref is typed with InstanceType<typeof ShareModal> so that .open() is
 // type-safe.
 
-import type { ShareToken } from '~/shared/types'
+import type { ShareToken } from '#shared/types'
 
 const props = defineProps<{
   listId: string

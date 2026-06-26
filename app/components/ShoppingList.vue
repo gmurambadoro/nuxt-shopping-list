@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { ShoppingList } from '~/shared/types'
+import type { ShoppingList } from '#shared/types'
+import type {ShareModal} from "#components";
 
 const props = defineProps<{
   list: ShoppingList
@@ -15,6 +16,26 @@ const emit = defineEmits<{
 
 const newItemName = ref('')
 const shareModal = ref<InstanceType<typeof ShareModal>>()
+
+const { latestEvent } = useListEvents(props.list.id)
+
+// Flash message for real-time update indicators
+const flashMessage = ref('')
+
+watch(latestEvent, (evt) => {
+  if (!evt) return
+
+  if (evt.type === 'item-added') {
+    flashMessage.value = `${evt.data.addedBy} added "${evt.data.item?.name}"`
+  } else if (evt.type === 'item-updated') {
+    const p = evt.data?.item?.purchased ? 'crossed off' : 'unchecked'
+    flashMessage.value = `${evt.data.updatedBy} ${p} "${evt.data?.item?.name}"`
+  } else if (evt.type === 'item-removed') {
+    flashMessage.value = `${evt.data.removedBy} removed an item`
+  }
+
+  setTimeout(() => { flashMessage.value = '' }, 4000)
+})
 
 // computed() derives a value from reactive state and caches the result.
 // These only recalculate when props.list.items changes — unlike inline
@@ -74,6 +95,14 @@ function submitNewItem() {
           </svg>
         </button>
       </div>
+    </div>
+
+    <!-- Real-time update flash message -->
+    <div
+      v-if="flashMessage"
+      class="px-5 py-2 bg-indigo-50 text-xs text-indigo-600 font-medium transition-all duration-300"
+    >
+      {{ flashMessage }}
     </div>
 
     <!-- Progress bar: width is driven by the progressPct computed value -->

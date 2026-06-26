@@ -1,4 +1,4 @@
-import type { ShoppingList, ShoppingItem } from '~/shared/types'
+import type { ShoppingList, ShoppingItem } from '#shared/types'
 
 export function useShoppingLists() {
   // useAsyncData fetches data on the server during SSR and on the client during

@@ -7,8 +7,8 @@
 // Errors:
 //   404 — list not found or does not belong to the user
 
-import { useDb } from '../../../db'
-import { items, lists } from '../../../db/schema'
+import { useDb } from '#server/db'
+import { items, lists } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

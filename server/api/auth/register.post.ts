@@ -8,9 +8,10 @@
 //   400 — missing or invalid fields (email, password, name)
 //   409 — email already registered
 
-import { useDb } from '../../db'
-import { users } from '../../db/schema'
+import { useDb } from '#server/db'
+import { users } from '#server/db/schema'
 import { eq } from 'drizzle-orm'
+import { sendWelcomeEmail } from '#server/utils/email'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ email: string; password: string; name: string }>(event)
@@ -33,14 +34,16 @@ export default defineEventHandler(async (event) => {
 
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
+  const email = body.email.trim()
+  const name = body.name.trim()
 
   // hashPassword() is provided by nuxt-auth-utils. It uses bcrypt with
   // a salt round of 10 and returns a string in the format $2b$10$...
   await db.insert(users).values({
     id,
-    email: body.email.trim(),
+    email,
     passwordHash: await hashPassword(body.password),
-    name: body.name.trim(),
+    name,
     createdAt: now,
   })
 
@@ -48,8 +51,10 @@ export default defineEventHandler(async (event) => {
   // The user object stored in the session is returned by /api/auth/me and
   // is available in protected routes via requireUserSession(event).
   await setUserSession(event, {
-    user: { id, email: body.email.trim(), name: body.name.trim() },
+    user: { id, email, name },
   })
 
-  return { id, email: body.email.trim(), name: body.name.trim() }
+  sendWelcomeEmail(email, name)
+
+  return { id, email, name }
 })

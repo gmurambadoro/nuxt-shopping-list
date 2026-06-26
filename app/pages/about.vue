@@ -1,6 +1,7 @@
 <script setup lang="ts">
-useHead({
-  title: 'About — ShopList'
+useSeoMeta({
+  title: 'About — ShopList',
+  description: 'ShopList is a collaborative shopping list app built with Nuxt 4.',
 })
 </script>
 

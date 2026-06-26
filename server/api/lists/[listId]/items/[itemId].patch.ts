@@ -7,9 +7,10 @@
 // Errors:
 //   404 — list not found, or item not found, or item does not belong to the list
 
-import { useDb } from '../../../../db'
-import { items, lists } from '../../../../db/schema'
+import { useDb } from '#server/db'
+import { items, lists } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { broadcastToList } from '#server/utils/sse'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -41,5 +42,8 @@ export default defineEventHandler(async (event) => {
 
   // Return the updated row so the client can update its local state
   const [updated] = await db.select().from(items).where(eq(items.id, itemId!))
+
+  broadcastToList(listId!, 'item-updated', { item: updated, updatedBy: user.name })
+
   return updated
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShoppingItem } from '~/shared/types'
+import type { ShoppingItem } from '#shared/types'
 
 defineProps<{
   item: ShoppingItem

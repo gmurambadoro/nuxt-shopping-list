@@ -6,9 +6,10 @@
 // Errors:
 //   404 — list not found, or item not found, or item does not belong to the list
 
-import { useDb } from '../../../../db'
-import { items, lists } from '../../../../db/schema'
+import { useDb } from '#server/db'
+import { items, lists } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { broadcastToList } from '#server/utils/sse'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -34,5 +35,8 @@ export default defineEventHandler(async (event) => {
   }
 
   await db.delete(items).where(eq(items.id, itemId!))
+
+  broadcastToList(listId!, 'item-removed', { itemId: itemId!, removedBy: user.name })
+
   return { success: true }
 })

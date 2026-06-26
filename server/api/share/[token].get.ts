@@ -16,8 +16,8 @@
 // The role is returned alongside the list so the frontend can decide whether
 // to show edit controls (editors) or just display the data (viewers).
 
-import { useDb } from '../../db'
-import { shareTokens, lists, items } from '../../db/schema'
+import { useDb } from '#server/db'
+import { shareTokens, lists, items } from '#server/db/schema'
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

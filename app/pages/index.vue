@@ -1,7 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
-useHead({
-  title: 'My Shopping Lists — ShopList'
+useSeoMeta({
+  title: 'My Shopping Lists — ShopList',
+  description: 'View and manage your shared shopping lists.',
 })
 
 const { lists, loading, pending, toggleItem, removeItem, addItem, addList, removeList, clearPurchased } = useShoppingLists()

@@ -9,9 +9,10 @@
 //   400 — item name is required
 //   404 — list not found or does not belong to the user
 
-import { useDb } from '../../../db'
-import { items, lists } from '../../../db/schema'
+import { useDb } from '#server/db'
+import { items, lists } from '#server/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { broadcastToList } from '#server/utils/sse'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -45,5 +46,8 @@ export default defineEventHandler(async (event) => {
   })
 
   const [item] = await db.select().from(items).where(eq(items.id, id))
+
+  broadcastToList(listId!, 'item-added', { item, addedBy: user.name })
+
   return item
 })
